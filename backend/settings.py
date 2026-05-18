@@ -87,7 +87,7 @@ WSGI_APPLICATION = 'backend.wsgi.application'
 
 DATABASES = {
     'default': dj_database_url.config(
-        default="postgresql://db_lm59_user:N9aZXJR4w44zTTOD0vioIIZFXrrXkMax@dpg-d0npa16mcj7s73f7vumg-a.oregon-postgres.render.com/db_lm59",
+        default="postgresql://db_u236_user:mKK3cEF6RstXNEVDWdcscz0nLNKIQnZf@dpg-d85d4iuk1jcs73fibr1g-a.virginia-postgres.render.com/db_u236",
         conn_max_age=600,
         conn_health_checks=True,
     )

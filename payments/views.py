@@ -17,7 +17,43 @@ from orders.models import Order, OrderQuantity
 from utils.EmailSender import actionNotificationEmail
 
 
+import uuid
+import requests
+from django.conf import settings
+from rest_framework.decorators import api_view
+from rest_framework.response import Response
+from rest_framework import status
 
+
+
+
+SUMUP_API_URL = "https://api.sumup.com/v0.1/checkouts"
+@api_view(["POST"])
+def sumup_create_checkout(request):
+    amount = request.data.get("amount")
+    currency = request.data.get("currency", "EUR")
+    description = request.data.get("description", "Payment")
+
+    payload = {
+        "checkout_reference": str(uuid.uuid4()),  # unique per transaction
+        "amount": amount,
+        "currency": currency,
+        "description": description,
+        "merchant_code": request.data.get("merchant_code"),  # from your SumUp dashboard
+        "redirect_url": "https://yourapp.com/payment/success",  # optional
+    }
+
+    headers = {
+        "Authorization": f"Bearer {settings.SUMUP_API_KEY}",
+        "Content-Type": "application/json",
+    }
+
+    response = requests.post(SUMUP_API_URL, json=payload, headers=headers)
+
+    if response.status_code == 201:
+        return Response(response.json(), status=status.HTTP_201_CREATED)
+
+    return Response(response.json(), status=response.status_code)
 
 
 class CreatePaymentIntent(APIView):
