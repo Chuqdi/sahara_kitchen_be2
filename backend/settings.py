@@ -239,6 +239,6 @@ SQUARE_ACCESS_TOKEN = os.getenv("SQUARE_ACCESS_TOKEN")
 SQUARE_LOCATION_ID = os.getenv("SQUARE_LOCATION_ID")
 SQUARE_APPLICATION_ID = os.getenv("SQUARE_APPLICATION_ID")
 SQUARE_ENVIRONMENT = 'production'  # Use 'production' for live environment
-
+STRIPE_API_KEY = os.getenv("STRIPE_API_KEY")
 
 SUMUP_API_KEY=os.getenv("SUMUP_API_KEY")

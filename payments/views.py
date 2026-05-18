@@ -125,7 +125,7 @@ class CreatePaymentIntent(APIView):
         
         
         if not order.is_pay_on_delivery:
-            stripe.api_key = "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"
+            stripe.api_key = settings.STRIPE_API_KEY
             paymentIntent = stripe.PaymentIntent.create(
             amount=int(amount) * 100,
             currency="gbp",
