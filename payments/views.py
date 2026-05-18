@@ -105,8 +105,7 @@ def create_pay_on_delivery_order (request):
         target=actionNotificationEmail,
         kwargs={
             "name": "Admin",
-            # "to": "johnson_onwu@yahoo.co.uk",
-            "to": "morganhezekiah111@gmail.com",
+            "to": "johnson_onwu@yahoo.co.uk",
             "message": message,
         },
     )
