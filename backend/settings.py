@@ -9,8 +9,14 @@ https://docs.djangoproject.com/en/4.2/topics/settings/
 For the full list of settings and their values, see
 https://docs.djangoproject.com/en/4.2/ref/settings/
 """
+import os
+
 import dj_database_url
 from pathlib import Path
+from dotenv import load_dotenv
+
+load_dotenv() 
+
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -87,7 +93,7 @@ WSGI_APPLICATION = 'backend.wsgi.application'
 
 DATABASES = {
     'default': dj_database_url.config(
-        default="postgresql://db_u236_user:mKK3cEF6RstXNEVDWdcscz0nLNKIQnZf@dpg-d85d4iuk1jcs73fibr1g-a.virginia-postgres.render.com/db_u236",
+        default=os.getenv("DB"),
         conn_max_age=600,
         conn_health_checks=True,
     )
@@ -163,10 +169,10 @@ AUTH_USER_MODEL ="users.User"
 
 CORS_ALLOW_ALL_ORIGINS = True
 
-AWS_ACCESS_KEY_ID = "AKIAQXZDR553VZ447CO4"
-AWS_SECRET_ACCESS_KEY = "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"
+AWS_ACCESS_KEY_ID = os.getenv("AWS_ACCESS_KEY_ID")
+AWS_SECRET_ACCESS_KEY = os.getenv("AWS_SECRET_ACCESS_KEY")
 AWS_DEFAULT_ACL = None
-AWS_STORAGE_BUCKET_NAME = "saharakitchen"
+AWS_STORAGE_BUCKET_NAME = os.getenv("AWS_STORAGE_BUCKET_NAME")
 AWS_S3_CUSTOM_DOMAIN = "%s.s3.amazonaws.com" % AWS_STORAGE_BUCKET_NAME
 AWS_S3_OBJECT_PARAMETERS = {
     "CacheControl": "max-age=86400",
@@ -213,8 +219,8 @@ EMAIL_USE_TLS = False
 EMAIL_USE_SSL = True
 EMAIL_PORT = 465
 DEFAULT_FROM_EMAIL = "SaharaKitchen<admin@saharakitchen.co.uk>"
-EMAIL_HOST_USER = "admin@saharakitchen.co.uk"
-EMAIL_HOST_PASSWORD ="gODFATHERTINZ1@"
+EMAIL_HOST_USER = os.getenv("EMAIL_HOST_USER")
+EMAIL_HOST_PASSWORD =os.getenv("EMAIL_HOST_PASSWORD")
 
 
 
@@ -229,10 +235,10 @@ EMAIL_HOST_PASSWORD ="gODFATHERTINZ1@"
 FRONTEND_URL="https://saharakitchen.co.uk/"
 
 
-SQUARE_ACCESS_TOKEN = 'EAAAl_w4MVWrclcimDAfORzmX_wOJp6PIaxCjVoJ1bh1JQrRypK3CRrv8WyPAOFu'
-SQUARE_LOCATION_ID = 'L79W2D51FX5JQ'
-SQUARE_APPLICATION_ID = 'sq0idp-sEdY2YnkKafEVxUcjzq1zw'
+SQUARE_ACCESS_TOKEN = os.getenv("SQUARE_ACCESS_TOKEN")
+SQUARE_LOCATION_ID = os.getenv("SQUARE_LOCATION_ID")
+SQUARE_APPLICATION_ID = os.getenv("SQUARE_APPLICATION_ID")
 SQUARE_ENVIRONMENT = 'production'  # Use 'production' for live environment
 
 
-SUMUP_API_KEY="sup_sk_v4zvr0xH4yUXst0yPIGwKrcaobgMjDZpK"
+SUMUP_API_KEY=os.getenv("SUMUP_API_KEY")
