@@ -185,8 +185,7 @@ DEFAULT_FROM_EMAIL = "OptimaInvestment <support@paynexinvestment.com>"
 DEFAULT_FILE_STORAGE = "storages.backends.s3boto3.S3Boto3Storage"
 
 
-# STRIPE_PK="pk_test_51OjMOYGuqI7LdGEkupr9c2Z6JiIbDZvFj4qa2yY9pbyLt964o9gBYsLNsJNdFFfBDN7s1KgjOoxcnjVkRfRqpbYv00KQRxXC7u"
-# STRIPE_SK="sk_test_51OjMOYGuqI7LdGEkeLS21uYQlwKFvE6OvuTVYYjQFPFjXx8QeZqIE5oniHj0gEVIU3hMg4kREmmXhTBHgxqIOJhY00TGjOto9v"
+
 
 
 # EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
