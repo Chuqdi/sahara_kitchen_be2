@@ -49,15 +49,46 @@ class GetAllOrders(APIView):
 
 class GetOrderWithID(APIView):
     permission_classes=[AllowAny]
-    def get(self, request,id):
+    def get(self, request,id, notify):
         try:
-            order = Order.objects.get(id=id)
+            order = Order.objects.get(checkout_id=id)
+            print(order)
             order.save()
         except Order.DoesNotExist:
             return Response(data={
                 "message":"Order not found",
             }, status=status.HTTP_404_NOT_FOUND)
         serializer = OrderSerializer(order)
+        if order and notify=="1":
+            message_to_customer = f"""
+                Your order was received successfully. Be patient as we will reach out to you soon.
+                Sahara Kitchen.
+            """
+            t = threading.Thread(
+                target=actionNotificationEmail,
+                kwargs={
+                    "name": f"{order.delivery_first_name} {order.delivery_last_name}",
+                    "to": order.email,
+                    "message": message_to_customer,
+                },
+            )
+            t.start()
+
+            # email to admin
+            message = f"""
+                An order was made now. The link below can be used to view details.
+    \n
+                https://saharakitchenadmin.co.uk/orders/{order.id}
+            """
+            t = threading.Thread(
+                target=actionNotificationEmail,
+                kwargs={
+                    "name": "Admin",
+                    "to": "johnson_onwu@yahoo.co.uk",
+                    "message": message,
+                },
+            )
+            t.start()
         
         
 

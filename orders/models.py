@@ -15,6 +15,7 @@ class Order(models.Model):
     delivery_first_name = models.TextField()
     delivery_last_name = models.TextField()
     delivery_address = models.TextField(null=True, blank=True)
+    checkout_id = models.TextField(null=True, blank=True)
     delivery_phone_number = models.TextField()
     quantities = models.ManyToManyField(OrderQuantity,)
     date_ordered=models.DateField(auto_now_add=True)

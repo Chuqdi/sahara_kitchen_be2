@@ -46,6 +46,8 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     "rest_framework",
     "rest_framework.authtoken",
+    'cloudinary',
+    'cloudinary_storage',
     "users",
     "meals",
     "categories",
@@ -188,7 +190,8 @@ AWS_LOCATION = "static"
 STATIC_URL = "https://%s/%s/" % (AWS_S3_CUSTOM_DOMAIN, AWS_LOCATION)
 STATICFILES_STORAGE = "storages.backends.s3boto3.S3Boto3Storage"
 DEFAULT_FROM_EMAIL = "OptimaInvestment <support@paynexinvestment.com>"
-DEFAULT_FILE_STORAGE = "storages.backends.s3boto3.S3Boto3Storage"
+# DEFAULT_FILE_STORAGE = "storages.backends.s3boto3.S3Boto3Storage"
+DEFAULT_FILE_STORAGE = 'cloudinary_storage.storage.MediaCloudinaryStorage'
 
 
 
@@ -242,3 +245,10 @@ SQUARE_ENVIRONMENT = 'production'  # Use 'production' for live environment
 STRIPE_API_KEY = os.getenv("STRIPE_API_KEY")
 
 SUMUP_API_KEY=os.getenv("SUMUP_API_KEY")
+
+
+CLOUDINARY_STORAGE = {
+    'CLOUD_NAME': os.getenv('CLOUDINARY_CLOUD_NAME'),
+    'API_KEY': os.getenv('CLOUDINARY_API_KEY'),
+    'API_SECRET': os.getenv('CLOUDINARY_API_SECRET'),
+}

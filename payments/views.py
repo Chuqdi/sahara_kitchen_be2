@@ -22,6 +22,13 @@ from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from rest_framework import status
 
+import uuid
+import requests
+from django.conf import settings
+from rest_framework.decorators import api_view, permission_classes
+from rest_framework.response import Response
+from rest_framework import status
+
 SUMUP_API_BASE = "https://api.sumup.com"
 
 def sumup_headers():
@@ -31,28 +38,37 @@ def sumup_headers():
     }
 
 @api_view(["POST"])
-def sumup_create_checkout(request):
+@permission_classes([AllowAny])
+def create_sumup_checkout(request):
     amount = request.data.get("amount")
-    currency = request.data.get("currency", "EUR")
-    description = request.data.get("description", "Payment")
+    currency = request.data.get("currency", "GBP")
+    description = request.data.get("description", "Order Payment")
+    delivery_first_name = request.data.get("delivery_first_name")
+    delivery_last_name = request.data.get("delivery_last_name")
+    delivery_phone_number = request.data.get("delivery_phone_number")
+    email = request.data.get("email")
+    delivery_country = request.data.get("delivery_country")
+    delivery_address = request.data.get("delivery_address")
+    items = request.data.get("items", [])
+    is_pay_on_delivery = request.data.get("is_pay_on_delivery", 0)
 
-    # fetch merchant code
+    # get merchant code
     merchant_res = requests.get(
         f"{SUMUP_API_BASE}/v0.1/me/merchant-profile",
         headers=sumup_headers(),
     )
     if not merchant_res.ok:
-        return Response(merchant_res.json(), status=merchant_res.status_code)
+        return Response({"error": "Failed to fetch merchant profile"}, status=500)
 
     merchant_code = merchant_res.json()["merchant_code"]
 
     payload = {
         "checkout_reference": str(uuid.uuid4()),
-        "amount": amount,
+        "amount": float(amount),
         "currency": currency,
         "description": description,
         "merchant_code": merchant_code,
-        "redirect_url": "https://yourapp.com/payment/success",
+        "redirect_url": "https://saharakitchen.co.uk/order/confirm",
     }
 
     checkout_res = requests.post(
@@ -62,9 +78,148 @@ def sumup_create_checkout(request):
     )
 
     if checkout_res.status_code == 201:
-        return Response({"id": checkout_res.json()["id"]}, status=status.HTTP_201_CREATED)
+        
+        
+        order = Order()
+        order.delivery_country = delivery_country
+        order.checkout_id = checkout_res.json()["id"]
+        order.delivery_first_name = delivery_first_name
+        order.delivery_last_name = delivery_last_name
+        order.delivery_phone_number = delivery_phone_number
+        order.email = email
+        order.is_pay_on_delivery = is_pay_on_delivery
+        order.delivery_address = delivery_address
+        order.is_paid = True
+        order.save()
+
+        for item in items:
+            try:
+                food = Meal.objects.get(id=item.get("food").get("id"))
+                quantity = item.get("quantity")
+                q = OrderQuantity.objects.create(food=food, quantity=quantity)
+                order.quantities.add(q)
+            except:
+                pass
+
+        order.save()
+        
+        return Response(
+            {"checkout_id": checkout_res.json()["id"]},
+            status=status.HTTP_201_CREATED,
+        )
 
     return Response(checkout_res.json(), status=checkout_res.status_code)
+
+
+
+
+
+@api_view(["POST"])
+@permission_classes([AllowAny])
+def confirm_sumup_payment(request):
+    try:
+        checkout_id = request.data.get("checkout_id")
+        amount = request.data.get("amount")
+        delivery_first_name = request.data.get("delivery_first_name")
+        delivery_last_name = request.data.get("delivery_last_name")
+        delivery_phone_number = request.data.get("delivery_phone_number")
+        email = request.data.get("email")
+        delivery_country = request.data.get("delivery_country")
+        delivery_address = request.data.get("delivery_address")
+        items = request.data.get("items", [])
+        is_pay_on_delivery = request.data.get("is_pay_on_delivery", 0)
+
+        if not checkout_id:
+            return Response({"error": "Missing checkout_id"}, status=400)
+
+        # verify payment status with SumUp before creating order
+        verify_res = requests.get(
+            f"{SUMUP_API_BASE}/v0.1/checkouts/{checkout_id}",
+            headers=sumup_headers(),
+        )
+
+        if not verify_res.ok:
+            return Response({"error": "Failed to verify payment"}, status=400)
+
+        checkout_data = verify_res.json()
+        payment_status = checkout_data.get("status")
+
+        if payment_status != "PAID":
+            return Response(
+                {"error": f"Payment not completed. Status: {payment_status}"},
+                status=400,
+            )
+
+        # create order
+        order = Order()
+        order.delivery_country = delivery_country
+        order.checkout_id = checkout_id
+        order.delivery_first_name = delivery_first_name
+        order.delivery_last_name = delivery_last_name
+        order.delivery_phone_number = delivery_phone_number
+        order.email = email
+        order.is_pay_on_delivery = is_pay_on_delivery
+        order.delivery_address = delivery_address
+        order.is_paid = True
+        order.save()
+
+        for item in items:
+            try:
+                food = Meal.objects.get(id=item.get("food").get("id"))
+                quantity = item.get("quantity")
+                q = OrderQuantity.objects.create(food=food, quantity=quantity)
+                order.quantities.add(q)
+            except:
+                pass
+
+        order.save()
+
+        # email to customer
+        message_to_customer = f"""
+            Your order was received successfully. Be patient as we will reach out to you soon.
+            Sahara Kitchen.
+        """
+        t = threading.Thread(
+            target=actionNotificationEmail,
+            kwargs={
+                "name": f"{order.delivery_first_name} {order.delivery_last_name}",
+                "to": order.email,
+                "message": message_to_customer,
+            },
+        )
+        t.start()
+
+        # email to admin
+        message = f"""
+            An order was made now. The link below can be used to view details.
+\n
+            https://saharakitchenadmin.co.uk/orders/{order.id}
+        """
+        t = threading.Thread(
+            target=actionNotificationEmail,
+            kwargs={
+                "name": "Admin",
+                "to": "johnson_onwu@yahoo.co.uk",
+                "message": message,
+            },
+        )
+        t.start()
+
+        return Response(
+            {
+                "success": True,
+                "order_id": order.id,
+                "status": payment_status,
+                "amount": checkout_data.get("amount"),
+                "currency": checkout_data.get("currency"),
+            },
+            status=status.HTTP_201_CREATED,
+        )
+
+    except Exception as e:
+        return Response({"error": str(e)}, status=500)
+
+
 
 class CreatePaymentIntent(APIView):
     permission_classes = [ AllowAny ]

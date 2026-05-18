@@ -29,5 +29,6 @@ class OrderSerializer(serializers.ModelSerializer):
             "is_paid",
             "delivery_address",
             "is_pay_on_delivery",
-            "email"
+            "email",
+            "checkout_id"
         ]
