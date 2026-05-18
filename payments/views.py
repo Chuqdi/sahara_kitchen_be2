@@ -18,7 +18,8 @@ from utils.EmailSender import actionNotificationEmail
 
 
 import uuid
-import requests
+from sumup import Sumup
+from sumup.checkouts import CreateCheckoutBody
 from django.conf import settings
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
@@ -27,33 +28,30 @@ from rest_framework import status
 
 
 
-SUMUP_API_URL = "https://api.sumup.com/v0.1/checkouts"
 @api_view(["POST"])
-def sumup_create_checkout(request):
+def create_checkout(request):
     amount = request.data.get("amount")
     currency = request.data.get("currency", "EUR")
     description = request.data.get("description", "Payment")
 
-    payload = {
-        "checkout_reference": str(uuid.uuid4()),  # unique per transaction
-        "amount": amount,
-        "currency": currency,
-        "description": description,
-        "merchant_code": request.data.get("merchant_code"),  # from your SumUp dashboard
-        "redirect_url": "https://yourapp.com/payment/success",  # optional
-    }
+    client = Sumup(api_key=settings.SUMUP_APIKEY)
 
-    headers = {
-        "Authorization": f"Bearer {settings.SUMUP_API_KEY}",
-        "Content-Type": "application/json",
-    }
+    # fetch merchant code dynamically
+    merchant = client.merchant.get()
+    merchant_code = merchant.merchant_profile.merchant_code
 
-    response = requests.post(SUMUP_API_URL, json=payload, headers=headers)
+    checkout = client.checkouts.create(
+        body=CreateCheckoutBody(
+            amount=amount,
+            currency=currency,
+            checkout_reference=str(uuid.uuid4()),
+            merchant_code=merchant_code,
+            description=description,
+            redirect_url="https://yourapp.com/payment/success",
+        )
+    )
 
-    if response.status_code == 201:
-        return Response(response.json(), status=status.HTTP_201_CREATED)
-
-    return Response(response.json(), status=response.status_code)
+    return Response({"id": checkout.id}, status=status.HTTP_201_CREATED)
 
 
 class CreatePaymentIntent(APIView):
