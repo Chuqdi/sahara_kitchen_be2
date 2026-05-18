@@ -37,6 +37,88 @@ def sumup_headers():
         "Content-Type": "application/json",
     }
 
+
+@api_view(["POST"])
+@permission_classes([AllowAny])
+def create_pay_on_delivery_order (request):
+    amount = request.data.get("amount")
+    currency = request.data.get("currency", "GBP")
+    description = request.data.get("description", "Order Payment")
+    delivery_first_name = request.data.get("delivery_first_name")
+    delivery_last_name = request.data.get("delivery_last_name")
+    delivery_phone_number = request.data.get("delivery_phone_number")
+    email = request.data.get("email")
+    delivery_country = request.data.get("delivery_country")
+    delivery_address = request.data.get("delivery_address")
+    items = request.data.get("items", [])
+    is_pay_on_delivery = request.data.get("is_pay_on_delivery", 0)
+    
+    
+    
+    order = Order()
+    order.amount = amount
+    order.delivery_country = delivery_country
+    order.delivery_first_name = delivery_first_name
+    order.delivery_last_name = delivery_last_name
+    order.delivery_phone_number = delivery_phone_number
+    order.email = email
+    order.is_pay_on_delivery = is_pay_on_delivery
+    order.delivery_address = delivery_address
+    order.is_paid = True
+    order.save()
+
+    for item in items:
+        try:
+            food = Meal.objects.get(id=item.get("food").get("id"))
+            quantity = item.get("quantity")
+            q = OrderQuantity.objects.create(food=food, quantity=quantity)
+            order.quantities.add(q)
+        except:
+            pass
+
+    order.save()
+    
+    
+    
+            # email to customer
+    message_to_customer = f"""
+        Your order was received successfully. Be patient as we will reach out to you soon.
+        Sahara Kitchen.
+    """
+    t = threading.Thread(
+        target=actionNotificationEmail,
+        kwargs={
+            "name": f"{order.delivery_first_name} {order.delivery_last_name}",
+            "to": order.email,
+            "message": message_to_customer,
+        },
+    )
+    t.start()
+
+        # email to admin
+    message = f"""
+        An order was made now. The link below can be used to view details.
+\n
+        https://saharakitchenadmin.co.uk/orders/{order.id}
+    """
+    t = threading.Thread(
+        target=actionNotificationEmail,
+        kwargs={
+            "name": "Admin",
+            # "to": "johnson_onwu@yahoo.co.uk",
+            "to": "morganhezekiah111@gmail.com",
+            "message": message,
+        },
+    )
+    t.start()
+    
+    
+    return Response(
+            {"order_id": order.id},
+            status=status.HTTP_201_CREATED,
+        )
+    
+    
 @api_view(["POST"])
 @permission_classes([AllowAny])
 def create_sumup_checkout(request):

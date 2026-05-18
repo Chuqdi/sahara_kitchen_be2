@@ -47,19 +47,29 @@ class GetAllOrders(APIView):
 
 
 
+
+
 class GetOrderWithID(APIView):
-    permission_classes=[AllowAny]
-    def get(self, request,id, notify):
+    permission_classes = [AllowAny]
+
+    def get(self, request, id, notify):
+        order = None
+
         try:
-            order = Order.objects.get(checkout_id=id)
-            print(order)
-            order.save()
+            order = Order.objects.get(id=id)
         except Order.DoesNotExist:
-            return Response(data={
-                "message":"Order not found",
-            }, status=status.HTTP_404_NOT_FOUND)
+            try:
+                order = Order.objects.get(checkout_id=id)
+            except Order.DoesNotExist:
+                return Response(
+                    data={"message": "Order not found"},
+                    status=status.HTTP_404_NOT_FOUND
+                )
+
+        order.save()
         serializer = OrderSerializer(order)
-        if order and notify=="1":
+
+        if notify == "1":
             message_to_customer = f"""
                 Your order was received successfully. Be patient as we will reach out to you soon.
                 Sahara Kitchen.
@@ -74,10 +84,9 @@ class GetOrderWithID(APIView):
             )
             t.start()
 
-            # email to admin
             message = f"""
                 An order was made now. The link below can be used to view details.
-    \n
+\n
                 https://saharakitchenadmin.co.uk/orders/{order.id}
             """
             t = threading.Thread(
@@ -89,10 +98,8 @@ class GetOrderWithID(APIView):
                 },
             )
             t.start()
-        
-        
 
-        return Response(data={
-                "data":serializer.data,
-            }, status=status.HTTP_200_OK)
-        
+        return Response(
+            data={"data": serializer.data},
+            status=status.HTTP_200_OK
+        )

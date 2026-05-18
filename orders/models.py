@@ -21,6 +21,7 @@ class Order(models.Model):
     date_ordered=models.DateField(auto_now_add=True)
     is_delivered = models.BooleanField(default=False)
     is_paid = models.BooleanField(default=False)
+    amount = models.TextField(null=True, blank=True)
     is_pay_on_delivery = models.BooleanField(default=False)
 
 
