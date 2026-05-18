@@ -31,7 +31,7 @@ def sumup_headers():
     }
 
 @api_view(["POST"])
-def create_checkout(request):
+def sumup_create_checkout(request):
     amount = request.data.get("amount")
     currency = request.data.get("currency", "EUR")
     description = request.data.get("description", "Payment")
