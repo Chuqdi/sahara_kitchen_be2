@@ -236,4 +236,4 @@ SQUARE_APPLICATION_ID = 'sq0idp-sEdY2YnkKafEVxUcjzq1zw'
 SQUARE_ENVIRONMENT = 'production'  # Use 'production' for live environment
 
 
-SUMUP_APIKEY="sup_sk_v4zvr0xH4yUXst0yPIGwKrcaobgMjDZpK"
+SUMUP_API_KEY="sup_sk_v4zvr0xH4yUXst0yPIGwKrcaobgMjDZpK"

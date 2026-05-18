@@ -15,18 +15,20 @@ import uuid
 from django.conf import settings
 from orders.models import Order, OrderQuantity
 from utils.EmailSender import actionNotificationEmail
-
-
 import uuid
-from sumup import Sumup
-from sumup.checkouts import CreateCheckoutBody
+import requests
 from django.conf import settings
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from rest_framework import status
 
+SUMUP_API_BASE = "https://api.sumup.com"
 
-
+def sumup_headers():
+    return {
+        "Authorization": f"Bearer {settings.SUMUP_API_KEY}",
+        "Content-Type": "application/json",
+    }
 
 @api_view(["POST"])
 def create_checkout(request):
@@ -34,25 +36,35 @@ def create_checkout(request):
     currency = request.data.get("currency", "EUR")
     description = request.data.get("description", "Payment")
 
-    client = Sumup(api_key=settings.SUMUP_APIKEY)
+    # fetch merchant code
+    merchant_res = requests.get(
+        f"{SUMUP_API_BASE}/v0.1/me/merchant-profile",
+        headers=sumup_headers(),
+    )
+    if not merchant_res.ok:
+        return Response(merchant_res.json(), status=merchant_res.status_code)
 
-    # fetch merchant code dynamically
-    merchant = client.merchant.get()
-    merchant_code = merchant.merchant_profile.merchant_code
+    merchant_code = merchant_res.json()["merchant_code"]
 
-    checkout = client.checkouts.create(
-        body=CreateCheckoutBody(
-            amount=amount,
-            currency=currency,
-            checkout_reference=str(uuid.uuid4()),
-            merchant_code=merchant_code,
-            description=description,
-            redirect_url="https://yourapp.com/payment/success",
-        )
+    payload = {
+        "checkout_reference": str(uuid.uuid4()),
+        "amount": amount,
+        "currency": currency,
+        "description": description,
+        "merchant_code": merchant_code,
+        "redirect_url": "https://yourapp.com/payment/success",
+    }
+
+    checkout_res = requests.post(
+        f"{SUMUP_API_BASE}/v0.1/checkouts",
+        json=payload,
+        headers=sumup_headers(),
     )
 
-    return Response({"id": checkout.id}, status=status.HTTP_201_CREATED)
+    if checkout_res.status_code == 201:
+        return Response({"id": checkout_res.json()["id"]}, status=status.HTTP_201_CREATED)
 
+    return Response(checkout_res.json(), status=checkout_res.status_code)
 
 class CreatePaymentIntent(APIView):
     permission_classes = [ AllowAny ]
